@@ -1,4 +1,6 @@
-package lingcreative.concurrent;
+package com.lingcreative.concurrent;
+
+import com.lingcreative.concurrent.AwaitingService;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;

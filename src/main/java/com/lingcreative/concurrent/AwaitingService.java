@@ -1,5 +1,6 @@
-package lingcreative.concurrent;
+package com.lingcreative.concurrent;
 
+import lingcreative.concurrent.AwaitCapableObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
