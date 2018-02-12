@@ -1,0 +1,7 @@
+/.gradle
+/.idea
+/out
+/bin
+/*.iml
+/.classpah
+/.settings
