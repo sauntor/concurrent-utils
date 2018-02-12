@@ -2,6 +2,8 @@ group 'com.lingcreative'
 version '0.0.1-SNAPSHOT'
 
 apply plugin: 'java'
+apply plugin: 'maven'
+apply plugin: 'signing'
 
 sourceCompatibility = 1.7
 targetCompatibility = 1.7
@@ -13,4 +15,69 @@ repositories {
 dependencies {
     compile 'org.slf4j:slf4j-api:1.7.25'
     testCompile 'junit:junit:4.12'
+}
+
+task javadocJar(type: Jar) {
+    classifier = 'javadoc'
+    from javadoc
+}
+
+task sourcesJar(type: Jar) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+artifacts {
+    archives javadocJar, sourcesJar
+}
+
+signing {
+    sign configurations.archives
+}
+
+archivesBaseName = rootProject.name
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+                authentication(userName: System.getProperty("oss.user"), password: System.getProperty("oss.password"))
+            }
+
+            snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+                authentication(userName: System.getProperty("oss.user"), password: System.getProperty("oss.password"))
+            }
+
+            pom.project {
+                name 'Concurrent Utilities'
+                packaging 'jar'
+                // optionally artifactId can be defined here
+                description 'Some utilities for concurrent java programmping.'
+                url 'https://github.com/sauntor/concurrent-utils'
+
+                scm {
+                    connection 'scm:git:https://github.com/sauntor/concurrent-utils.git'
+                    developerConnection 'scm:svn:https://github.com/sauntor/concurrent-utils.git'
+                    url 'https://github.com/sauntor/concurrent-utils'
+                }
+
+                licenses {
+                    license {
+                        name 'GNU LESSER GENERAL PUBLIC LICENSE, Version 3'
+                        url 'https://www.gnu.org/licenses/lgpl-3.0.txt'
+                    }
+                }
+
+                developers {
+                    developer {
+                        id 'sauntor'
+                        name '适然(Sauntor)'
+                        email 'sauntor@yeah.net'
+                    }
+                }
+            }
+        }
+    }
 }

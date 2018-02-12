@@ -1,5 +1,7 @@
 package lingcreative.concurrent;
 
+import com.lingcreative.concurrent.AwaitCapableObject;
+import com.lingcreative.concurrent.AwaitingService;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
