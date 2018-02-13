@@ -43,18 +43,18 @@ uploadArchives {
             beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
 
             repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
-                authentication(userName: System.getProperty("oss.user"), password: System.getProperty("oss.password"))
+                authentication(userName: ossrhUsername, password: ossrhPassword)
             }
 
             snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
-                authentication(userName: System.getProperty("oss.user"), password: System.getProperty("oss.password"))
+                authentication(userName: ossrhUsername, password: ossrhPassword)
             }
 
             pom.project {
                 name 'Concurrent Utilities'
                 packaging 'jar'
                 // optionally artifactId can be defined here
-                description 'Some utilities for concurrent java programmping.'
+                description 'Some utilities for concurrent java programming.'
                 url 'https://github.com/sauntor/concurrent-utils'
 
                 scm {

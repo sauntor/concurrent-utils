@@ -8,9 +8,11 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Condition;
 
 public class AwaitCapableObject implements AwaitingService.AwaitCapable, Comparable<AwaitCapableObject> {
+
     private static final AtomicLong ID = new AtomicLong();
 
     private final long id = ID.incrementAndGet();
+
     private volatile boolean started = false;
     private AwaitingService.AwaitCapable awaitCapable;
     private AwaitingService.Operation onSuccess;

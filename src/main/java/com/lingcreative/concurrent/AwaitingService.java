@@ -11,11 +11,17 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+/**
+ * An efficient worker for waiting many {@link AwaitCapable} objects.
+ */
 public class AwaitingService {
+
     private static final AtomicLong ID = new AtomicLong();
 
     private final long id = ID.incrementAndGet();
+
     private String name = AwaitingService.class.getSimpleName() + "-" + id;
+
     private Logger logger = LoggerFactory.getLogger(name);
 
     private volatile int threads  = 1;
@@ -24,10 +30,9 @@ public class AwaitingService {
     private volatile long timeWhileWaiting = 1;
     private volatile TimeUnit timeUnitWhileWaiting = TimeUnit.NANOSECONDS;
 
+    private volatile boolean started = false;
     private volatile boolean stopping = false;
     private volatile boolean stopped = false;
-
-    private volatile boolean started = false;
 
     private ExecutorService waitingService;
 
