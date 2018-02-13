@@ -3,6 +3,7 @@ package com.lingcreative.concurrent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
@@ -25,27 +26,32 @@ public class AwaitingService {
     private Logger logger = LoggerFactory.getLogger(name);
 
     private volatile int threads  = 1;
-    private volatile long timeWhenEmpty = 73;
-    private volatile TimeUnit timeUnitWhenEmpty = TimeUnit.MILLISECONDS;
-    private volatile long timeWhileWaiting = 1;
+    private volatile long timeWhenEmpty = 7;
+    private volatile TimeUnit timeUnitWhenEmpty = TimeUnit.MICROSECONDS;
+    private volatile long timeWhileWaiting = 31;
     private volatile TimeUnit timeUnitWhileWaiting = TimeUnit.NANOSECONDS;
 
     private volatile boolean started = false;
     private volatile boolean stopping = false;
     private volatile boolean stopped = false;
 
-    private ExecutorService waitingService;
+    private ExecutorService waitingExecutor;
+    private boolean closeExternalExecutor = false;
+    private boolean externalExecutor = false;
 
     private Set<AwaitCapableObject> awaitCapableObjects = new ConcurrentSkipListSet<>();
 
+    @PostConstruct
     public void start() {
         if (started) {
             return;
         }
         started = true;
-        waitingService = Executors.newFixedThreadPool(threads);
+        if (waitingExecutor == null) {
+            waitingExecutor = Executors.newFixedThreadPool(threads);
+        }
         for (int i = 0; i < threads; i++) {
-            waitingService.submit(new Runnable() {
+            waitingExecutor.submit(new Runnable() {
                 @Override
                 public void run() {
                     loop();
@@ -64,18 +70,27 @@ public class AwaitingService {
     public void cancel(AwaitCapableObject object) {
         awaitCapableObjects.remove(object);
     }
+
     private void loop() {
+        long millis = timeUnitWhenEmpty.toMillis(timeWhenEmpty);
+        int nanos = (int) (timeUnitWhenEmpty.toNanos(timeWhenEmpty) - TimeUnit.MILLISECONDS.toNanos(millis));
         while (!stopping) {
             try {
                 if (awaitCapableObjects.isEmpty()) {
-                    Thread.sleep(timeUnitWhenEmpty.toNanos(timeWhenEmpty));
+                    Thread.sleep(millis, nanos);
                 }
                 tryWait();
             } catch (InterruptedException e) {
-                Thread.interrupted();
+                if (Thread.interrupted() && !stopping) {
+                    logger.info("Canceled by interruption", e);
+                    stopping = true;
+                }
+            } catch (Exception e) {
+                logger.error("Unhandled exception occurred!", e);
             }
         }
     }
+
     private void tryWait() throws InterruptedException {
         for (AwaitCapableObject awaitCapableObject : awaitCapableObjects) {
             boolean handled = false;
@@ -97,6 +112,7 @@ public class AwaitingService {
             } finally {
                 if (handled) {
                     awaitCapableObjects.remove(awaitCapableObject);
+                    awaitCapableObject.complete();
                     logger.info("{} is completed", awaitCapableObject);
                 }
             }
@@ -113,30 +129,59 @@ public class AwaitingService {
             return;
         }
         stopping = true;
-        waitingService.shutdown();
+        if (waitingExecutor != null && (!externalExecutor || closeExternalExecutor)) {
+            waitingExecutor.shutdown();
+        }
         for (AwaitCapableObject object : awaitCapableObjects) {
             object.cancel();
         }
     }
 
     public void setThreads(int threads) {
+        if (threads < 1) {
+            throw new IllegalArgumentException("threads must great then `0`");
+        }
         this.threads = threads;
     }
 
+    public void setWaitingExecutor(ExecutorService waitingExecutor) {
+        if (waitingExecutor == null) {
+            return;
+        }
+        this.waitingExecutor = waitingExecutor;
+        this.externalExecutor = true;
+    }
+
     public void setTimeWhenEmpty(long timeWhenEmpty) {
+        if (timeWhenEmpty < 1) {
+            throw new IllegalArgumentException("`timeWhenEmpty` must great then `0`");
+        }
         this.timeWhenEmpty = timeWhenEmpty;
     }
 
     public void setTimeUnitWhenEmpty(TimeUnit timeUnitWhenEmpty) {
+        if (timeUnitWhenEmpty == null) {
+            return;
+        }
         this.timeUnitWhenEmpty = timeUnitWhenEmpty;
     }
 
     public void setTimeWhileWaiting(long timeWhileWaiting) {
+        if (timeWhileWaiting < 1) {
+            throw new IllegalArgumentException("`timeWhileWaiting` must great then `0`");
+        }
         this.timeWhileWaiting = timeWhileWaiting;
     }
 
     public void setTimeUnitWhileWaiting(TimeUnit timeUnitWhileWaiting) {
+        if (timeUnitWhileWaiting == null) {
+            return;
+        }
         this.timeUnitWhileWaiting = timeUnitWhileWaiting;
+    }
+
+    public void setCloseExternalExecutor(boolean closeExternalExecutor) {
+        this.closeExternalExecutor = closeExternalExecutor;
     }
 
     public static interface CancelHandler {

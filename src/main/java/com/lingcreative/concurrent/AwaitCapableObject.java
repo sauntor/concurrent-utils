@@ -1,7 +1,5 @@
 package com.lingcreative.concurrent;
 
-import com.lingcreative.concurrent.AwaitingService;
-
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -16,6 +14,7 @@ public class AwaitCapableObject implements AwaitingService.AwaitCapable, Compara
     private volatile boolean started = false;
     private AwaitingService.AwaitCapable awaitCapable;
     private AwaitingService.Operation onSuccess;
+    private Runnable onComplete;
     private AwaitingService.Operation onStart;
     private AwaitingService.ExceptionHandler onError;
 
@@ -29,6 +28,12 @@ public class AwaitCapableObject implements AwaitingService.AwaitCapable, Compara
     public void success() throws Throwable {
         if (onSuccess != null) {
             onSuccess.on();
+        }
+    }
+
+    public void complete() {
+        if (onComplete != null) {
+            onComplete.run();
         }
     }
 
@@ -70,6 +75,11 @@ public class AwaitCapableObject implements AwaitingService.AwaitCapable, Compara
 
         public Builder success(AwaitingService.Operation operation) {
             object.onSuccess = operation;
+            return this;
+        }
+
+        public Builder complete(Runnable onComplete) {
+            object.onComplete = onComplete;
             return this;
         }
 

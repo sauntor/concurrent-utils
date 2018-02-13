@@ -6,13 +6,19 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class AwaitingServiceTest {
     private Logger logger = LoggerFactory.getLogger(getClass());
 
     private ExecutorService taskExecutor;
     private AwaitingService awaitingService;
+
+    private int objects = 9;
+    private CountDownLatch finishCountDown = new CountDownLatch(objects);
 
     @Before
     public void init() {
@@ -22,28 +28,21 @@ public class AwaitingServiceTest {
 
     @After
     public void destroy() throws InterruptedException {
-        taskExecutor.awaitTermination(15, TimeUnit.MINUTES);
+        taskExecutor.shutdown();
         awaitingService.stop();
     }
 
     @Test
     public void run() throws Exception {
+        print("~~~~~~~~~~~~~~~~~~");
         awaitingService.start();
-        for (int i = 0; i < 9; i++) {
-            long sleep = (long) (15 * (Math.random() + 0.1d));
+        for (int i = 0; i < objects; i++) {
+            long sleep = 1L * (long) (15 * (Math.random() + 0.1d));
             wait(i, sleep);
         }
 
-        taskExecutor.submit(new Callable<Object>() {
-            @Override
-            public Object call() throws Exception {
-                Thread.sleep(5000L);
-                AwaitingServiceTest.this.stop();
-                return null;
-            }
-        });
-
-        awaitingService.stop();
+        finishCountDown.await();
+        print("^^^^^^^^^^^^^^^^^^");
     }
 
     private void task(final int number, final long sleep, final CountDownLatch latch) {
@@ -54,6 +53,7 @@ public class AwaitingServiceTest {
                 Thread.sleep(sleep);
                 latch.countDown();
                 print("End %d, sleep = %d", number, sleep);
+                finishCountDown.countDown();
                 return null;
             }
         });
