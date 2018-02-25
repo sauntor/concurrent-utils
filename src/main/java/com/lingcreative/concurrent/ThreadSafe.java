@@ -6,14 +6,19 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+@Documented
 @Retention(RetentionPolicy.SOURCE)
 @Target({ ElementType.TYPE, ElementType.METHOD, ElementType.PARAMETER })
-@Documented
 public @interface ThreadSafe {
 
     /**
-     * Note for the annotated type.
+     * Note for the annotated element. Alias for {@link #note()}
      */
     String value() default "";
+
+    /**
+     * Note for the annotated element.
+     */
+    String note() default "";
 
 }

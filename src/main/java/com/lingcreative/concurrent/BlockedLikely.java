@@ -8,6 +8,17 @@ import java.lang.annotation.Target;
 
 @Documented
 @Retention(RetentionPolicy.SOURCE)
-@Target({ ElementType.TYPE, ElementType.METHOD, ElementType.CONSTRUCTOR })
+@Target({ ElementType.TYPE, ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.PARAMETER })
 public @interface BlockedLikely {
+
+    /**
+     * Note for the annotated element. Alias for {@link #note()}
+     */
+    String value() default "";
+
+    /**
+     * Note for the annotated element.
+     */
+    String note() default "";
+
 }
